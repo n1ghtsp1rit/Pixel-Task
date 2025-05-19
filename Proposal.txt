@@ -1,0 +1,39 @@
+﻿Ernest Jennison
+Prof. Stern
+CT-120
+05-19-2025
+Project Name: Pixel-Task
+Summary:
+        Pixel-Task is a web-based, 2D pixel assignment or task tracker for students. The goal of this software is to make completing required tasks more engaging for those with ADHD or a general struggle to focus on their work. The basis that Pixel-Design will be built upon is an article written by Kirsten Milliken, PHD, PCC, titled Gameify Anything. The general idea of “gameifying” less preferred tasks allows for those who struggle with focus to become more engaged, and hopefully more productive in everyday tasks.
+        Pixel-Task will be built to create a gameplay environment catered towards focus periods, task completion, and engagement. Its primary use case will be for University Students, or those who are in this age range. Its core feature set will include:
+                                        1. Intuitive task input
+                                        2. Minimal environment to encourage focus
+                                        3. A points system that scales with difficulty(user-defined)
+                                        4. Timer-based mechanics
+                                        5. Reward Systems
+                                        6. Toggleable music
+
+
+Stack: 
+        For this project, I will be using the following stack:
+* REACT
+* Phaser
+* Tailwind CSS
+
+
+
+
+
+
+Hosting:
+Currently undecided. Looking into services with tight integration with GitHub so the code base can reside there.
+
+
+
+
+Inspirations:
+
+
+* Virtual Cottage
+* Assorted Notion Templates
+* XP-based progression games
