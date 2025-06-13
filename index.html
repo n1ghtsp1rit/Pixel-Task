@@ -1,0 +1,279 @@
+
+<!DOCTYPE html>
+<html lang="en">
+	<! I could not finish the necessary interior cabin assets. It took me much longer than expected to complete the basic logic for tasks, dismissing tasks, the timer, and the points system. So this is the current state of my project. I do plan on finishing this more in the future. Also a note, I did use some AI assitance because for some reason I could not figure out the scaling issues I was having. Come to find out it was because they changed it, but have not reflected that in the documentation. >
+<head>
+	<meta charset="UTF-8" />
+	<title>Pixel-Task</title>
+	<script src = "https://cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+	<style type="text/css">
+		body {
+			margin: 0;
+			padding: 0;
+			background: #000;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			min-height: 100vh;
+		}
+		#gameContainer {
+			width: 65vw;
+			height: 65vh;
+			position: relative;
+		}
+		#taskInput {
+			position: absolute;
+			top: 10px;
+			left: 10px;
+			width: 200px;
+			padding: 5px;
+			z-index: 1000;
+			display: none;
+		}
+		#difficultySelect {
+			position: absolute;
+			top: 40px;
+			left: 10px;
+			width: 200px;
+			padding: 5px;
+			z-index: 1000;
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<div id="gameContainer"></div>
+	<input type="text" id="taskInput" placeholder="Enter task...">
+	<select id="difficultySelect">
+		<option value="1">Easy (1 point)</option>
+		<option value="2">Medium (2 points)</option>
+		<option value="3">Hard (3 points)</option>
+	</select>
+
+<script type="text/javascript">
+	// Define scenes first
+	class StartScene extends Phaser.Scene {
+		constructor() {
+			super({ key: 'StartScene' });
+		}
+
+		preload() {
+			// Add loading error handling
+			this.load.on('loaderror', (fileObj) => {
+				console.error('Error loading asset:', fileObj.src);
+			});
+
+			// Load assets with absolute paths
+			this.load.image('mountains', './Visual_Assets/mountains.png');
+			this.load.image('defaultButton', './Visual_Assets/Default.png');
+			this.load.image('hoverButton', './Visual_Assets/Hover.png');
+		}
+
+		create() {
+			console.log('Creating start scene...');
+			
+			// Hide task input UI
+			document.getElementById('taskInput').style.display = 'none';
+			document.getElementById('difficultySelect').style.display = 'none';
+			
+			// Add background
+			const mountains = this.add.image(0, 0, 'mountains');
+			mountains.setOrigin(0, 0);
+			mountains.setDisplaySize(this.cameras.main.width, this.cameras.main.height);
+			console.log('Mountains image added');
+			
+			// Add start button
+			const startButton = this.add.image(this.cameras.main.width / 2, this.cameras.main.height / 2, 'defaultButton');
+			startButton.setOrigin(0.5);
+			startButton.setScale(0.5); // Scale down the button
+			console.log('Start button added');
+
+			const startText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 'START', {
+				fontSize: '24px',
+				fill: '#000'
+			}).setOrigin(0.5);
+
+			startButton.setInteractive();
+			
+			startButton.on('pointerover', () => {
+				startButton.setTexture('hoverButton');
+			});
+
+			startButton.on('pointerout', () => {
+				startButton.setTexture('defaultButton');
+			});
+
+			startButton.on('pointerdown', () => {
+				this.scene.start('CabinScene');
+			});
+		}
+	}
+
+	class CabinScene extends Phaser.Scene {
+		constructor() {
+			super({ key: 'CabinScene' });
+			this.points = 0;
+			this.timerActive = false;
+			this.workTime = 25 * 60;
+			this.breakTime = 5 * 60;
+			this.currentTime = this.workTime;
+			this.isWorkTime = true;
+		}
+
+		preload() {
+			// Add loading error handling
+			this.load.on('loaderror', (fileObj) => {
+				console.error('Error loading asset:', fileObj.src);
+			});
+
+			// Load assets with absolute paths
+			this.load.image('square', './Visual_Assets/square.png');
+		}
+
+		create() {
+			console.log('Creating cabin scene...');
+
+			// Show task input UI and ensure it's positioned correctly
+			const taskInput = document.getElementById('taskInput');
+			const difficultySelect = document.getElementById('difficultySelect');
+			
+			taskInput.style.display = 'block';
+			taskInput.style.left = '10px';
+			taskInput.style.top = '10px';
+			
+			difficultySelect.style.display = 'block';
+			difficultySelect.style.left = '10px';
+			difficultySelect.style.top = '40px';
+
+			// Create UI elements
+			this.createUI();
+			
+			// Create todo list container
+			this.todoItems = [];
+			this.createTodoItem("Welcome to Pixel-Task!");
+
+			// Set up input handling
+			this.setupInputHandling();
+		}
+
+		createUI() {
+			// Points display
+			this.pointsText = this.add.text(10, 50, 'Points: 0', {
+				fontSize: '20px',
+				fill: '#ffffff'
+			});
+
+			// Timer display
+			this.timerText = this.add.text(10, 80, 'Timer: 25:00', {
+				fontSize: '20px',
+				fill: '#ffffff'
+			});
+
+			// Timer controls
+			const startTimerButton = this.add.text(10, 110, 'Start Timer', {
+				fontSize: '20px',
+				fill: '#ffffff',
+				backgroundColor: '#000000'
+			}).setPadding(5).setInteractive();
+
+			startTimerButton.on('pointerdown', () => {
+				if (!this.timerActive) {
+					this.timerActive = true;
+					startTimerButton.setText('Pause Timer');
+				} else {
+					this.timerActive = false;
+					startTimerButton.setText('Start Timer');
+				}
+			});
+		}
+
+		setupInputHandling() {
+			const taskInput = document.getElementById('taskInput');
+			const difficultySelect = document.getElementById('difficultySelect');
+
+			taskInput.addEventListener('keypress', (e) => {
+				if (e.key === 'Enter' && taskInput.value.trim() !== '') {
+					const difficulty = parseInt(difficultySelect.value);
+					this.createTodoItem(taskInput.value, difficulty);
+					taskInput.value = '';
+				}
+			});
+		}
+
+		createTodoItem(text, difficulty = 1) {
+			// Calculate position to center the square in the frame
+			const xPos = this.cameras.main.width / 2;
+			const yPos = 150 + (this.todoItems.length * 80); // Increased starting y position to account for UI elements
+
+			// Add square background
+			const square = this.add.image(xPos, yPos, 'square');
+			square.setOrigin(0.5);
+			square.setScale(0.15); // Scale down the square
+
+			// Add task text
+			const todoText = this.add.text(xPos, yPos, text, {
+				fontSize: '14px',
+				fill: '#000000',
+				wordWrap: { width: 120 }
+			}).setOrigin(0.5);
+
+			// Make text interactive instead of square
+			todoText.setInteractive();
+			todoText.on('pointerdown', () => {
+				this.addPoints(difficulty);
+				todoText.destroy();
+				square.destroy();
+				this.todoItems = this.todoItems.filter(item => item !== square);
+			});
+
+			this.todoItems.push(square);
+		}
+
+		addPoints(amount) {
+			this.points += amount;
+			this.pointsText.setText(`Points: ${this.points}`);
+		}
+
+		update(time, delta) {
+			if (this.timerActive) {
+				this.currentTime -= delta / 1000;
+				
+				if (this.currentTime <= 0) {
+					this.currentTime = this.isWorkTime ? this.breakTime : this.workTime;
+					this.isWorkTime = !this.isWorkTime;
+					
+					if (!this.isWorkTime) {
+						// Break time started
+						this.createTodoItem("Time for a break! Take 5 minutes.");
+					} else {
+						// Work time started
+						this.createTodoItem("Break's over! Back to work!");
+					}
+				}
+
+				const minutes = Math.floor(this.currentTime / 60);
+				const seconds = Math.floor(this.currentTime % 60);
+				this.timerText.setText(`Timer: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+			}
+		}
+	}
+
+	// Initialize game after scene definitions
+	var config = {
+		type: Phaser.AUTO,
+		width: 800,
+		height: 600,
+		scene: [StartScene, CabinScene],
+		parent: 'gameContainer',
+		backgroundColor: '#000000',
+		scale: {
+			mode: 1, // Phaser.Scale.FIT
+			autoCenter: true
+		}
+	};
+
+	var game = new Phaser.Game(config);
+</script>
+
+</body>
+</html>
